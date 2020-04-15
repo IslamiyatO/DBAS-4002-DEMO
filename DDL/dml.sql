@@ -30,7 +30,7 @@ VALUES ('DBAS4005', 'Transactional SQL', @StudentID, GETDATE()),
 
 --TO INSERT MANUALLY. YOU TURN ON THE IDENTITY FIELD\
 SET IDENTITY_INSERT Student ON;
-INSERT INTO Student (StudentID,FirstName, LastName, Age, Photo)
+INSERT INTO Student (StudentID, FirstName, LastName, Age, Photo)
 VALUES ('100', 'Nancy', 'Drew', 41, NULL);
 SET IDENTITY_INSERT Student OFF;
 
@@ -54,17 +54,19 @@ UPDATE Course
 SET CourseID = 7
 WHERE CourseID =10;
 --Since it cant upDATE THE record with the above codes, then you use the line f codes below.
+-- a (complicated) example of changing an identity field
 SET IDENTITY_INSERT Course ON;
 DECLARE @Name VARCHAR(32);
 DECLARE @Code NCHAR(25);
 DECLARE @StudentID INT;
 DECLARE @EnrolDate DATETIME;
 SELECT @Code = Code, @Name = Name, @StudentID = StudentID, @EnrolDate = EnrolDate
-FROM Course;
-INSERT INTO Course (CourseID, Code, Name, StudentID, EnrolDate)
-VALUES  (5, @Code + '_New', @Name, @StudentID, @EnrolDate )
+FROM Course
+WHERE CourseID = 10;
 DELETE FROM Course
 WHERE CourseID = 10;
+INSERT INTO Course (CourseID, Code, Name, StudentID, EnrolDate)
+VALUES  (5, @Code, @Name, @StudentID, @EnrolDate )
 SET IDENTITY_INSERT Course OFF;
 
 -- SELECT Statements
@@ -134,7 +136,7 @@ SELECT CONCAT(FirstName + ' ', LastName) AS FullName FROM Person.Person;
 --SUBSTRING( expression, start, length). 2 means start at 2nd index then 3 means ,print 3 letters e.g SYED = YED
 SELECT FirstName, SUBSTRING(FirstName , 2,3) FROM Person.Person;
 
---to kno the pEXACT SPOT of the character CHARINDEX (expressionToFind,  expresionToSearch
+--to know the EXACT SPOT of the character CHARINDEX (expressionToFind,  expresionToSearch
 -- E.G the spot for 'a' in  catherine is 2
 SELECT FirstName, CHARINDEX('a' , FirstName) FROM Person.Person;
 
@@ -173,17 +175,17 @@ SELECT (FirstName + ' ' + LastName) AS FullName,
 FROM Person.Person;
 
 -- to do the maximum
-SELECT MAX(LEN(FirstName + ' ' + LastName)) AS Length
+SELECT MAX(LEN(FirstName + ' ' + LastName)) AS MaxLength
 FROM Person.Person;
 
 -- CAST( TO THE NEAREST WHOLE NUMBER)/CONVERT
 SELECT TotalDue, CAST (TotalDue AS INT) FROM Sales.SalesOrderHeader;
 SELECT TotalDue, CONVERT (INT, TotalDue) FROM Sales.SalesOrderHeader;
 
---Datetime(to diplay the current date you cab add 7 to the convert statement, the ISO format
+--Datetime(to display the current date you cab add 7 to the convert statement, the ISO format
 -- of the date is 127 0r 126
 SELECT  OrderDate FROM Sales.SalesOrderHeader;
- -- TO CHANGE THE FORMAT OF THE DAATE, YOU CAN USE THE CONVERT FUNCTION
+ -- TO CHANGE THE FORMAT OF THE DATE, YOU CAN USE THE CONVERT FUNCTION
  SELECT  OrderDate, CONVERT(VARCHAR, OrderDate, 7) FROM Sales.SalesOrderHeader;
  SELECT  OrderDate, CONVERT(VARCHAR, OrderDate, 127) FROM Sales.SalesOrderHeader;
 
@@ -198,3 +200,90 @@ WHERE YEAR(OrderDate) = 2011 AND MONTH(OrderDate) = 12;
 -- To extract the hour, minutes or seconds
 SELECT OrderDate, DATEPART(HOUR, OrderDate), DATEPART(MINUTE ,OrderDate)
 FROM Sales.SalesOrderHeader;
+
+--IIF Expression
+DECLARE @value INT;
+SET @value = 123;
+
+SELECT  IIF(@value > 100, '> 100', '<= 100') AS OneHundred;
+
+SELECT
+    FirstName, LastName,
+    IIF(CHARINDEX('a', LastName) != 0, 'Letter A in name', '') AS AinName
+FROM Person.Person;
+
+--choose  --1= 0k, 2=good, 3=bad
+SELECT CHOOSE(2, 'OK', 'GOOD', 'BAD') AS Status;
+
+--0= No emails, 1= want emails, 2= different emails FOR Email Promotions under
+SELECT CHOOSE(EmailPromotion + 1, 'No emails', 'Want Emails', 'Different emails') AS STATUS;
+
+--CASE/WHEN STATEMENT.
+DECLARE @letter CHAR(1);
+SET @letter = 'C';
+-- TO USE AN IF STATEMENT
+-- SELECT IIF(@letter = 'a', 'It is an A',
+--           IIF(@letter = 'b', 'It is a B',
+--             IIF(@letter = 'c', 'It is a C', 'It is NOT A,B or C')))
+--     AS LetterCheck;
+
+-- USING THE SELECT CASE
+DECLARE @letter CHAR(1);
+SET @letter = 'C';
+SELECT CASE @letter
+    WHEN 'a' THEN 'It is an A'
+    WHEN 'b' THEN 'It is a B'
+    WHEN 'c' THEN 'It is a C'
+    ELSE 'It is NOT A, B,C'
+    END AS LetterCheck;
+
+--Another method of SELECT CASE
+DECLARE @letter CHAR(1);
+SET @letter = 'C';
+SELECT CASE
+    WHEN @letter = 'a'  THEN 'It is an A'
+    WHEN @letter = 'b'  THEN 'It is an B'
+    WHEN @letter = 'c'  THEN 'It is an C'
+    ELSE 'It is NOT A, B,C'
+    END AS LetterCheck3;
+
+-- Analyzing Data using the case when statement
+SELECT ProductNumber, Name, Price Range =
+
+--Coalesce statement -- this locates the first not null value in a list of values
+SELECT COALESCE(NULL,NULL,NULL,1,2,3,4,5) AS Number;
+
+--joining person table with employee listing out the job title
+-- to list out only their firstnames
+SELECT COALESCE(JobTitle, FirstName, LastName) AS Title
+FROM Person.Person p
+LEFT OUTER JOIN HumanResources.Employee e ON p.BusinessEntityID = e.BusinessEntityID;
+
+--ISNULL
+-- rEPLACE jOBTITLE WITH CUSTOMER IF NULL
+SELECT ISNULL(JobTitle, 'Customer'), FirstName, LastName AS Title
+FROM Person.Person p
+LEFT OUTER JOIN HumanResources.Employee e ON p.BusinessEntityID = e.BusinessEntityID;
+
+--Sub-Queries -A query within a query
+--tHIS GIVES ONLY THE JOBTITLE
+SELECT JobTitle FROM HumanResources.Employee;
+-- To select the subquery
+SELECT JobTitle,
+       (SELECT FirstName + ' ' + LastName
+           FROM Person.Person p WHERE p.BusinessEntityID = e.BusinessEntityID)
+FROM HumanResources.Employee e;
+
+--ANOTHER EXAMPKLE
+SELECT PersonType, FirstName, LastName
+FROM Person.Person;
+
+-- this displays employees with the person type 'EM', 'SC'
+
+SELECT JobTitle FROM HumanResources.Employee
+WHERE BusinessEntityID IN (
+    SELECT BusinessEntityID FROM Person.Person WHERE PersonType = 'EM');
+
+SELECT FirstName, LastName FROM Person.Person
+WHERE BusinessEntityID IN (
+    SELECT BusinessEntityID FROM Person.Person WHERE PersonType = 'EM');
